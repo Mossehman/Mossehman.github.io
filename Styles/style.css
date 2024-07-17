@@ -1,0 +1,30 @@
+html {
+    overflow-x: hidden;
+    overflow-y: hidden;
+}
+
+body {
+    overflow-x: hidden;
+    overflow-y: hidden;
+    margin: 0;
+}
+
+#myCanvas {
+    width: 100vw;
+    height: 100vh;
+    display: block;
+    object-fit: contain;
+    position: absolute;
+}
+
+#whiteTransition {
+    position: absolute;
+    width: 100vw;
+    height: 100vh;
+    background-color: white;
+    opacity: 0%;
+    pointer-events: none;
+
+    transition: opacity;
+    transition-duration: 1.2s;
+}
