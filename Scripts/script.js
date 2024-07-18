@@ -488,8 +488,6 @@ function scalePlanetsOnLoad(scaleSpeed) {
 function renderPlanetDisplays() {
     if (!toMainScreen) { return; }
 
-    
-
     for (let i = 0; i < planetDisplays.length; i++) {
         // Calculate the distance from the center
         let planetFromCenterX = planetDisplays[i].positionX - canvas.width / 2;
@@ -499,21 +497,16 @@ function renderPlanetDisplays() {
         let scaledPlanetFromCenterX = planetFromCenterX * scalingFactor;
         let scaledPlanetFromCenterY = planetFromCenterY * scalingFactor;
 
-        // Recalculate the position using the scaled distance
+        // Recalculate the position using the scaled distance and current offsets
         let scaledPositionX = canvas.width / 2 + scaledPlanetFromCenterX + offsetX;
         let scaledPositionY = canvas.height / 2 + scaledPlanetFromCenterY + offsetY;
 
+        // Render the planet and its rings
         ctx.beginPath();
         ctx.fillStyle = planetDisplays[i].color;
         ctx.arc(scaledPositionX, scaledPositionY, planetDisplays[i].size * scalingFactor, 0, Math.PI * 2);
-
-        if (planetDisplays[i].glow) {
-            ctx.shadowColor = planetDisplays[i].color;
-            ctx.shadowBlur = planetDisplays[i].glowStrength * scalingFactor;
-        } else {
-            ctx.shadowBlur = 0;
-        }
-
+        ctx.shadowColor = planetDisplays[i].glow ? planetDisplays[i].color : 'transparent';
+        ctx.shadowBlur = planetDisplays[i].glow ? planetDisplays[i].glowStrength * scalingFactor : 0;
         ctx.fill();
         ctx.closePath();
 
@@ -529,39 +522,20 @@ function renderPlanetDisplays() {
         ctx.shadowColor = 'transparent';
         ctx.shadowBlur = 0;
 
-        if (!renderDisplayNames) { continue; }
-
-        ctx.beginPath();
-        let fontSize = planetDisplays[i].size * scalingFactor * 0.1;
-        ctx.font = `${fontSize}vw Arial`;
-        ctx.textAlign = "center";
-        ctx.textBaseLine = "middle";
-        ctx.fillStyle = "white";
-        ctx.strokeStyle = "black";
-        let textX = scaledPositionX;
-        let textY = scaledPositionY - (2 * planetDisplays[i].size * scalingFactor) - (planetDisplays[i].ringCount * planetDisplays[i].ringSize * scalingFactor);
-        ctx.fillText(planetDisplays[i].name, textX, textY);
-/*        ctx.strokeText(planetDisplays[i].name, textX, textY);*/
-        ctx.closePath();
+        if (renderDisplayNames) {
+            ctx.beginPath();
+            let fontSize = planetDisplays[i].size * scalingFactor * 0.1;
+            ctx.font = `${fontSize}vw Arial`;
+            ctx.textAlign = "center";
+            ctx.textBaseLine = "middle";
+            ctx.fillStyle = "white";
+            ctx.strokeStyle = "black";
+            let textX = scaledPositionX;
+            let textY = scaledPositionY - (2 * planetDisplays[i].size * scalingFactor) - (planetDisplays[i].ringCount * planetDisplays[i].ringSize * scalingFactor);
+            ctx.fillText(planetDisplays[i].name, textX, textY);
+            ctx.closePath();
+        }
     }
-}
-
-function lockOntoDisplayPlanet(planet) {
-
-    // Calculate the distance from the center
-    let planetFromCenterX = planet.positionX - canvas.width / 2;
-    let planetFromCenterY = planet.positionY - canvas.height / 2;
-
-    // Apply the scaling factor to the distance
-    let scaledPlanetFromCenterX = planetFromCenterX * scalingFactor;
-    let scaledPlanetFromCenterY = planetFromCenterY * scalingFactor;
-
-    // Recalculate the position using the scaled distance
-    let scaledPositionX = canvas.width / 2 + scaledPlanetFromCenterX;
-    let scaledPositionY = canvas.height / 2 + scaledPlanetFromCenterY;
-
-    targetOffsetX = (canvas.width / 2) - scaledPositionX;
-    targetOffsetY = (canvas.height / 2) - scaledPositionY;
 }
 
 let planetButtons = [];
@@ -582,51 +556,70 @@ function addPlanetsToList() {
 function selectPlanet() {
     for (let i = 0; i < planetButtons.length; i++) {
         planetButtons[i].onclick = function () {
-            planetToView = planetDisplays[i];  
-            let scaleRatioToSun = planetToView.size / Sun.size;
-            targetScalingFactor = 1 / scaleRatioToSun;
+            planetToView = planetDisplays[i];
+            lockOntoDisplayPlanet(planetToView);  // Lock onto the planet when it is selected
         };
     }
 
-    let offsetSpeed = 2;
+    updateCameraPosition();
+    updateZoomLevel();
+}
 
-    if (offsetX - targetOffsetX < 0) {
+function lockOntoDisplayPlanet(planet) {
+    // Calculate the distance from the center
+    let planetFromCenterX = planet.positionX - canvas.width / 2;
+    let planetFromCenterY = planet.positionY - canvas.height / 2;
+
+    // Apply the scaling factor to the distance
+    let scaledPlanetFromCenterX = planetFromCenterX * scalingFactor;
+    let scaledPlanetFromCenterY = planetFromCenterY * scalingFactor;
+
+    // Recalculate the position using the scaled distance
+    let scaledPositionX = canvas.width / 2 + scaledPlanetFromCenterX;
+    let scaledPositionY = canvas.height / 2 + scaledPlanetFromCenterY;
+
+    targetOffsetX = (canvas.width / 2) - scaledPositionX;
+    targetOffsetY = (canvas.height / 2) - scaledPositionY;
+
+    let scaleRatioToSun = planet.size / Sun.size;
+    targetScalingFactor = 1 / scaleRatioToSun;
+}
+
+function updateCameraPosition() {
+    let offsetSpeed = 2 * planetToView.orbitSpeed;
+
+    // Smoothly transition the offset X
+    if (Math.abs(offsetX - targetOffsetX) < offsetSpeed) {
+        offsetX = targetOffsetX;
+    } else if (offsetX < targetOffsetX) {
         offsetX += offsetSpeed;
-    }
-    else if (offsetX - targetOffsetX > 0) {
+    } else if (offsetX > targetOffsetX) {
         offsetX -= offsetSpeed;
     }
 
-    if (offsetX - targetOffsetX > -offsetSpeed && offsetX - targetOffsetX < offsetSpeed) {
-        offsetX = targetOffsetX;
-    }
-
-    if (offsetY - targetOffsetY < 0) {
+    // Smoothly transition the offset Y
+    if (Math.abs(offsetY - targetOffsetY) < offsetSpeed) {
+        offsetY = targetOffsetY;
+    } else if (offsetY < targetOffsetY) {
         offsetY += offsetSpeed;
-    }
-    else if (offsetY - targetOffsetY > 0) {
+    } else if (offsetY > targetOffsetY) {
         offsetY -= offsetSpeed;
     }
+}
 
-    if (offsetY - targetOffsetY > -offsetSpeed && offsetY - targetOffsetY < offsetSpeed) {
-        offsetY = targetOffsetY;
-    }
-
+function updateZoomLevel() {
     if (!canInteractWithMainMenu) { return; }
 
-    let scaleSpeed = 0.5;
+    let scaleSpeed = 0.05; // Adjusted to ensure smoother transitions
 
-    if (windowZoom - targetScalingFactor < 0) {
+    // Smoothly transition the zoom level
+    if (Math.abs(windowZoom - targetScalingFactor) < scaleSpeed) {
+        windowZoom = targetScalingFactor;
+    } else if (windowZoom < targetScalingFactor) {
         windowZoom += scaleSpeed;
-    }
-    else if (windowZoom - targetScalingFactor > 0) {
+    } else if (windowZoom > targetScalingFactor) {
         windowZoom -= scaleSpeed;
     }
-
-    if (windowZoom - targetScalingFactor > -scaleSpeed && windowZoom - targetScalingFactor < scaleSpeed) {
-        windowZoom = targetScalingFactor;
-    }
-
 }
 
 //#endregion
