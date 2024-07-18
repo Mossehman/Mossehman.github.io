@@ -69,6 +69,7 @@ body {
 }
 
 #planetDisplayBar ul li button {
+    font-family: 'Courier New';
     background-color: transparent;
     background-repeat: no-repeat;
     border: none;
