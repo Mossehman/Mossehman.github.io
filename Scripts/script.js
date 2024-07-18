@@ -327,12 +327,20 @@ const PlanetDisplay = {
 }
 
 let scalingFactor = 0;
-let relativePlanetScaling = 1;
-let timeScale = 1;
-let maxScale = 0.05;
+let relativePlanetScaling = 0.1;
+let timeScale = 1;  
+let maxScale = 0.5;
 
-offsetX = 0;
-offsetY = 0;
+let targetScalingFactor = maxScale;
+let canInteractWithMainMenu = false;
+
+let planetToView;
+
+let offsetX = 0;
+let offsetY = 0;
+
+let targetOffsetX = 0;
+let targetOffsetY = 0;
 
 let renderDisplayNames = true;
 
@@ -435,10 +443,10 @@ function initialisePlanetDisplays() {
 
 
     Pluto.name = "Pluto";
-    Pluto.positionX = canvas.width / 2 + 45006 * relativePlanetScaling;
+    Pluto.positionX = canvas.width / 2 + 40006 * relativePlanetScaling;
     Pluto.positionY = canvas.height / 2;
     Pluto.orbitSpeed = 7.95 * timeScale;
-    Pluto.size = 0.8 * relativePlanetScaling;
+    Pluto.size = 10.8 * relativePlanetScaling;
     Pluto.color = "#5e4840";
 
     planetDisplays.push(Sun);
@@ -464,18 +472,23 @@ function rotatePlanetDisplays(dt) {
 }
 
 function scalePlanetsOnLoad(scaleSpeed) {
-    if (!toMainScreen) { return; }
+    if (!toMainScreen || canInteractWithMainMenu) { return; }
 
     if (scalingFactor < maxScale) {
         scalingFactor += scaleSpeed;
     }
-    else if (scalingFactor > maxScale) {
+    else if (scalingFactor >= maxScale) {
         scalingFactor = maxScale;
+        document.getElementById("planetDisplayBar").style.transitionDuration = "0.6s";
+        document.getElementById("planetDisplayBar").style.transform = 'translate(0, 0)';    
+        canInteractWithMainMenu = true;
     }
 }
 
 function renderPlanetDisplays() {
     if (!toMainScreen) { return; }
+
+    
 
     for (let i = 0; i < planetDisplays.length; i++) {
         // Calculate the distance from the center
@@ -547,21 +560,74 @@ function lockOntoDisplayPlanet(planet) {
     let scaledPositionX = canvas.width / 2 + scaledPlanetFromCenterX;
     let scaledPositionY = canvas.height / 2 + scaledPlanetFromCenterY;
 
-    offsetX = (canvas.width / 2) - scaledPositionX;
-    offsetY = (canvas.height / 2) - scaledPositionY;
-
-    console.log(offsetX);
+    targetOffsetX = (canvas.width / 2) - scaledPositionX;
+    targetOffsetY = (canvas.height / 2) - scaledPositionY;
 }
 
+let planetButtons = [];
 function addPlanetsToList() {
     for (let i = 0; i < planetDisplays.length; i++) {
-        document.querySelector('#planetDisplayBar ul').innerHTML += `
-        <li><button id="planetButton">${planetDisplays[i].name}</button></li>
-        `
+        let listItem = document.createElement('li');
+        let button = document.createElement('button');
+        button.id = `planetButton${i}`;
+        button.textContent = planetDisplays[i].name;
+
+        listItem.appendChild(button);
+        document.querySelector('#planetDisplayBar ul').appendChild(listItem);
+
+        planetButtons.push(button);
     }
 }
 
+function selectPlanet() {
+    for (let i = 0; i < planetButtons.length; i++) {
+        planetButtons[i].onclick = function () {
+            planetToView = planetDisplays[i];  
+            let scaleRatioToSun = planetToView.size / Sun.size;
+            targetScalingFactor = 1 / scaleRatioToSun;
+        };
+    }
 
+    let offsetSpeed = 2;
+
+    if (offsetX - targetOffsetX < 0) {
+        offsetX += offsetSpeed;
+    }
+    else if (offsetX - targetOffsetX > 0) {
+        offsetX -= offsetSpeed;
+    }
+
+    if (offsetX - targetOffsetX > -offsetSpeed && offsetX - targetOffsetX < offsetSpeed) {
+        offsetX = targetOffsetX;
+    }
+
+    if (offsetY - targetOffsetY < 0) {
+        offsetY += offsetSpeed;
+    }
+    else if (offsetY - targetOffsetY > 0) {
+        offsetY -= offsetSpeed;
+    }
+
+    if (offsetY - targetOffsetY > -offsetSpeed && offsetY - targetOffsetY < offsetSpeed) {
+        offsetY = targetOffsetY;
+    }
+
+    if (!canInteractWithMainMenu) { return; }
+
+    let scaleSpeed = 0.5;
+
+    if (windowZoom - targetScalingFactor < 0) {
+        windowZoom += scaleSpeed;
+    }
+    else if (windowZoom - targetScalingFactor > 0) {
+        windowZoom -= scaleSpeed;
+    }
+
+    if (windowZoom - targetScalingFactor > -scaleSpeed && windowZoom - targetScalingFactor < scaleSpeed) {
+        windowZoom = targetScalingFactor;
+    }
+
+}
 
 //#endregion
 
@@ -593,6 +659,7 @@ function init() {
     generateGalaxy();
     initialisePlanetDisplays();
     addPlanetsToList();
+    planetToView = Sun;
     calledInit = true; //we do not want to call init more than once, so we set the bool to true such that init will not be called again after the first frame
 }
 
@@ -601,9 +668,10 @@ function update(dt) {
     rotateGalaxy(dt);
     generateWarp(dt);
     moveWarp(dt);
-    scalePlanetsOnLoad(0.05    * dt);
+    scalePlanetsOnLoad(0.05 * dt);
     rotatePlanetDisplays(dt);
-    lockOntoDisplayPlanet(Sun);
+    selectPlanet();
+    lockOntoDisplayPlanet(planetToView);
 }
 
 function render(dt) {
