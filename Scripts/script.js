@@ -581,7 +581,9 @@ function lockOntoDisplayPlanet(planet) {
     targetOffsetX = (canvas.width / 2) - scaledPositionX;
     targetOffsetY = (canvas.height / 2) - scaledPositionY;
 
-    if ($(window).width() <= 800) {
+    let windowWidth = window.width;
+
+    if (windowWidth <= 800) {
         offsetX = targetOffsetX;
         offsetY = targetOffsetY;
     }
