@@ -427,8 +427,8 @@ function initialisePlanetDisplays() {
     Uranus.color = "#bfdaf2";
     Uranus.ringColor = "#ffffff";
     Uranus.ringCount = 2;
-    Uranus.ringSize = 5 * relativePlanetScaling;
-    Uranus.ringSpacing = 7 * relativePlanetScaling;
+    Uranus.ringSize = 0.4 * relativePlanetScaling;
+    Uranus.ringSpacing = 0.7 * relativePlanetScaling;
 
     Neptune.name = "Neptune";
     Neptune.positionX = canvas.width / 2 + 34689 * relativePlanetScaling;
@@ -443,10 +443,10 @@ function initialisePlanetDisplays() {
 
 
     Pluto.name = "Pluto";
-    Pluto.positionX = canvas.width / 2 + 40006 * relativePlanetScaling;
+    Pluto.positionX = canvas.width / 2 + 45006 * relativePlanetScaling;
     Pluto.positionY = canvas.height / 2;
     Pluto.orbitSpeed = 7.95 * timeScale;
-    Pluto.size = 10.8 * relativePlanetScaling;
+    Pluto.size = 0.8 * relativePlanetScaling;
     Pluto.color = "#5e4840";
 
     planetDisplays.push(Sun);
@@ -553,10 +553,15 @@ function addPlanetsToList() {
     }
 }
 
+let xLock = false;
+let yLock = false;
+
 function selectPlanet() {
     for (let i = 0; i < planetButtons.length; i++) {
         planetButtons[i].onclick = function () {
             planetToView = planetDisplays[i];
+            xLock = false;
+            yLock = false;
             lockOntoDisplayPlanet(planetToView);  // Lock onto the planet when it is selected
         };
     }
@@ -581,10 +586,7 @@ function lockOntoDisplayPlanet(planet) {
     targetOffsetX = (canvas.width / 2) - scaledPositionX;
     targetOffsetY = (canvas.height / 2) - scaledPositionY;
 
-    let windowWidth = window.innerWidth;
-    console.log(windowWidth);
-
-    if (windowWidth <= 800) {
+    if (xLock && yLock) {
         offsetX = targetOffsetX;
         offsetY = targetOffsetY;
     }
@@ -595,11 +597,12 @@ function lockOntoDisplayPlanet(planet) {
 }
 
 function updateCameraPosition() {
-    let offsetSpeed = Math.max(1, planetToView.orbitSpeed * timeScale);
+    let offsetSpeed = 1;
 
     // Smoothly transition the offset X
     if (Math.abs(offsetX - targetOffsetX) < offsetSpeed) {
         offsetX = targetOffsetX;
+        xLock = true;
     } else if (offsetX < targetOffsetX) {
         offsetX += offsetSpeed;
     } else if (offsetX > targetOffsetX) {
@@ -609,6 +612,7 @@ function updateCameraPosition() {
     // Smoothly transition the offset Y
     if (Math.abs(offsetY - targetOffsetY) < offsetSpeed) {
         offsetY = targetOffsetY;
+        yLock = true;
     } else if (offsetY < targetOffsetY) {
         offsetY += offsetSpeed;
     } else if (offsetY > targetOffsetY) {
