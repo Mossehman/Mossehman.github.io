@@ -555,6 +555,7 @@ function addPlanetsToList() {
 
 let xLock = false;
 let yLock = false;
+let hasZoomedOut = true;
 
 function selectPlanet() {
     for (let i = 0; i < planetButtons.length; i++) {
@@ -562,12 +563,27 @@ function selectPlanet() {
             planetToView = planetDisplays[i];
             xLock = false;
             yLock = false;
+            hasZoomedOut = false;
             lockOntoDisplayPlanet(planetToView);  // Lock onto the planet when it is selected
         };
     }
 
+    zoomOut();
     updateCameraPosition();
     updateZoomLevel();
+}
+
+function zoomOut() {
+    if (hasZoomedOut) { return; }
+    let zoomOutSpeed = 0.5;
+
+    if (windowZoom > 1) {
+        windowZoom -= zoomOutSpeed;
+    }
+    else if (windowZoom <= 1) {
+        windowZoom = 1;
+        hasZoomedOut = true;
+    }
 }
 
 function lockOntoDisplayPlanet(planet) {
@@ -597,6 +613,8 @@ function lockOntoDisplayPlanet(planet) {
 }
 
 function updateCameraPosition() {
+
+    if (!hasZoomedOut) { return; }
     let offsetSpeed = 1;
 
     // Smoothly transition the offset X
@@ -621,7 +639,7 @@ function updateCameraPosition() {
 }
 
 function updateZoomLevel() {
-    if (!canInteractWithMainMenu) { return; }
+    if (!canInteractWithMainMenu || !hasZoomedOut) { return; }
 
     let scaleSpeed = 0.05; // Adjusted to ensure smoother transitions
 
