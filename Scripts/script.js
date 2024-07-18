@@ -586,7 +586,7 @@ function lockOntoDisplayPlanet(planet) {
 }
 
 function updateCameraPosition() {
-    let offsetSpeed = 2 * planetToView.orbitSpeed;
+    let offsetSpeed = 2 * Math.min(1, planetToView.orbitSpeed * timeScale);
 
     // Smoothly transition the offset X
     if (Math.abs(offsetX - targetOffsetX) < offsetSpeed) {
