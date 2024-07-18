@@ -33,6 +33,8 @@ function updateCanvasSize(windowScaling) {
 function resetCanvasPositions() {
 
     generateGalaxy();
+    hideCurrentStars();
+    initialisePlanetDisplays();
 }
 //#endregion
 
@@ -126,7 +128,8 @@ const starDisplay = {
 
 let toGalaxy = false;
 let toWarp = false;
-let hasWarped = false;
+let toMainScreen = false;
+
 
 //#region galaxyLoadingScreen
 let galaxyStars = [];
@@ -193,7 +196,7 @@ function renderGalaxy() {
 function transitionToWarp() {
     if (toWarp) { return; }
     toWarp = true;
-    windowZoomSpeed += 0.02;
+    windowZoomSpeed += 0.04;
     document.getElementById("whiteTransition").style.opacity = '100%';
 
     setTimeout(() => {
@@ -207,20 +210,33 @@ function transitionToWarp() {
 //#region warpLoadingScreen
 
 const maxStarPerFrame = 4;
-const minStarPerFrame = 0;
+const minStarPerFrame = 1;
 let warpStars = [];
 let warpStarDirX = [];
 let warpStarDirY = [];
+let warpStarDelay = 0.05;
+let warpStarTimer = 0;
+
 function warpInit() {
     toGalaxy = false;
     document.getElementById("whiteTransition").style.transitionDuration = '0.6s';
     document.getElementById("whiteTransition").style.opacity = '0%';
     windowZoom = 0;
     windowZoomSpeed = 0;
+
+    setTimeout(() => {
+        transitionToMainScreen()
+    }, 2000);
 }
 
-function generateWarp() {
+function generateWarp(dt) {
     if (toWarp == false) { return; }
+
+    warpStarTimer += dt;
+    if (warpStarTimer < warpStarDelay) {
+        return;
+    }
+
     let starWarpCount = generateRandomLambda(minStarPerFrame, maxStarPerFrame, (minStarPerFrame + maxStarPerFrame) * 0.5, 30);
     for (let i = 0; i < starWarpCount; i++) {
         let warpStar = Object.create(starDisplay);
@@ -238,11 +254,12 @@ function generateWarp() {
 
         warpStars.push(warpStar);
     }
+
+    warpStarTimer = 0;
 }
 
 function moveWarp(dt) {
-    if (toWarp == false) { return; }
-    console.log(warpStars[0].size);
+    if (toWarp == false && toMainScreen == false) { return; }
     for (let i = 0; i < warpStars.length; i++) {
 
         if (warpStars[i].positionX < -10 || warpStars[i].positionX > canvas.width + 10 || warpStars[i].positionY < -10 || warpStars[i].positionY > canvas.height + 10 || warpStars[i].toRender == false) {
@@ -253,14 +270,14 @@ function moveWarp(dt) {
         let direction = normalize(warpStarDirX[i], warpStarDirY[i]);
         warpStars[i].positionX += direction.x * warpStars[i].speed * dt;
         warpStars[i].positionY += direction.y * warpStars[i].speed * dt;
-        warpStars[i].size = Math.sqrt(Math.pow(warpStars[i].positionX - (canvas.width / 2), 2) + Math.pow(warpStars[i].positionY - (canvas.height / 2), 2)) * 0.3;
+        warpStars[i].size = Math.sqrt(Math.pow(warpStars[i].positionX - (canvas.width / 2), 2) + Math.pow(warpStars[i].positionY - (canvas.height / 2), 2)) * 0.5;
 
     }
 
 }
 
 function renderWarp() {
-    if (toWarp == false || toGalaxy == true) { return; }
+    if ((toWarp == false && toMainScreen == false) || toGalaxy == true) { return; }
 
 
     for (let i = 0; i < warpStars.length; i++) {
@@ -272,7 +289,279 @@ function renderWarp() {
         ctx.fill(); 
     }
 }
+
+function hideCurrentStars() {
+    for (let i = 0; i < warpStars.length; i++) {
+        warpStars[i].toRender = false;
+    }
+}
+
+function transitionToMainScreen() {
+    toWarp = false;
+    toMainScreen = true;  
+
+}
 //#endregion
+
+//#endregion
+
+//#region mainMenu
+const PlanetDisplay = {
+    name: "Planet",
+    positionX: 0,
+    positionY: 0,
+    orbitSpeed: 0,
+    size: 1,
+    planetColor: "",
+
+    glow: false,
+    glowStrength: 1,
+
+    ringCount: 0,
+    ringColor: "",
+    ringSpacing: 1,
+    ringSize: 1,
+
+    orbitOffsetX: 0,
+    orbitOffsetY: 0,
+}
+
+let scalingFactor = 0;
+let relativePlanetScaling = 1;
+let timeScale = 1;
+let maxScale = 0.05;
+
+offsetX = 0;
+offsetY = 0;
+
+let renderDisplayNames = true;
+
+let Sun = Object.create(PlanetDisplay);
+let Mercury = Object.create(PlanetDisplay);
+let Venus = Object.create(PlanetDisplay);
+let Earth = Object.create(PlanetDisplay);
+let Mars = Object.create(PlanetDisplay);
+let Jupiter = Object.create(PlanetDisplay);
+let Saturn = Object.create(PlanetDisplay);
+let Uranus = Object.create(PlanetDisplay);
+let Neptune = Object.create(PlanetDisplay);
+let Pluto = Object.create(PlanetDisplay);
+
+let planetDisplays = [];
+
+function initialisePlanetDisplays() {
+    planetDisplays = [];
+
+    Sun.name = "Sun";
+    Sun.positionX = canvas.width / 2;
+    Sun.positionY = canvas.height / 2;
+    Sun.orbitSpeed = 0;
+    Sun.size = 400 * relativePlanetScaling;
+    Sun.glow = true;
+    Sun.glowStrength = 70;
+    Sun.color = "#f09826";
+
+    Mercury.name = "Mercury";
+    Mercury.positionX = canvas.width / 2 + 450 * relativePlanetScaling;
+    Mercury.positionY = canvas.height / 2;
+    Mercury.orbitSpeed = 80.35 * timeScale;
+    Mercury.size = 1.5 * relativePlanetScaling;
+    Mercury.color = "#825844";
+
+    Venus.name = "Venus";
+    Venus.positionX = canvas.width / 2 + 831 * relativePlanetScaling;
+    Venus.positionY = canvas.height / 2;
+    Venus.orbitSpeed = 58.5 * timeScale;
+    Venus.size = 3.6 * relativePlanetScaling;
+    Venus.color = "#baa266";
+
+    Earth.name = "Earth";
+    Earth.positionX = canvas.width / 2 + 1154 * relativePlanetScaling;
+    Earth.positionY = canvas.height / 2;
+    Earth.orbitSpeed = 50 * timeScale;
+    Earth.size = 4 * relativePlanetScaling;
+    Earth.color = "#86b6db";
+
+    Mars.name = "Mars";
+    Mars.positionX = canvas.width / 2 + 1754 * relativePlanetScaling;
+    Mars.positionY = canvas.height / 2;
+    Mars.orbitSpeed = 40.1 * timeScale;
+    Mars.size = 2 * relativePlanetScaling;
+    Mars.color = "#ab2f13";
+
+    Jupiter.name = "Jupiter";
+    Jupiter.positionX = canvas.width / 2 + 6000 * relativePlanetScaling;
+    Jupiter.positionY = canvas.height / 2;
+    Jupiter.orbitSpeed = 21.7 * timeScale;
+    Jupiter.size = 40 * relativePlanetScaling;
+    Jupiter.color = "#b89e76";
+    Jupiter.ringColor = "#b89e76";
+    Jupiter.ringCount = 1;
+    Jupiter.ringSize = 0.3 * relativePlanetScaling;
+    Jupiter.ringSpacing = 6 * relativePlanetScaling;
+
+    Saturn.name = "Saturn";
+    Saturn.positionX = canvas.width / 2 + 11007 * relativePlanetScaling;
+    Saturn.positionY = canvas.height / 2;
+    Saturn.orbitSpeed = 16.5 * timeScale;
+    Saturn.size = 36 * relativePlanetScaling;
+    Saturn.color = "#e8cea7";
+    Saturn.ringColor = "#e3d5c1";
+    Saturn.ringCount = 2;
+    Saturn.ringSize = 10 * relativePlanetScaling;
+    Saturn.ringSpacing = 11 * relativePlanetScaling;
+
+    Uranus.name = "Uranus";
+    Uranus.positionX = canvas.width / 2 + 22177 * relativePlanetScaling;
+    Uranus.positionY = canvas.height / 2;
+    Uranus.orbitSpeed = 11.4 * timeScale;
+    Uranus.size = 16 * relativePlanetScaling;
+    Uranus.color = "#bfdaf2";
+    Uranus.ringColor = "#ffffff";
+    Uranus.ringCount = 2;
+    Uranus.ringSize = 5 * relativePlanetScaling;
+    Uranus.ringSpacing = 7 * relativePlanetScaling;
+
+    Neptune.name = "Neptune";
+    Neptune.positionX = canvas.width / 2 + 34689 * relativePlanetScaling;
+    Neptune.positionY = canvas.height / 2;
+    Neptune.orbitSpeed = 9.1 * timeScale;
+    Neptune.size = 12 * relativePlanetScaling;
+    Neptune.color = "#4361d9";
+    Neptune.ringColor = "#acbcfa";
+    Neptune.ringCount = 4;
+    Neptune.ringSize = 0.4 * relativePlanetScaling;
+    Neptune.ringSpacing = 0.6 * relativePlanetScaling;
+
+
+    Pluto.name = "Pluto";
+    Pluto.positionX = canvas.width / 2 + 45006 * relativePlanetScaling;
+    Pluto.positionY = canvas.height / 2;
+    Pluto.orbitSpeed = 7.95 * timeScale;
+    Pluto.size = 0.8 * relativePlanetScaling;
+    Pluto.color = "#5e4840";
+
+    planetDisplays.push(Sun);
+    planetDisplays.push(Mercury);
+    planetDisplays.push(Venus);
+    planetDisplays.push(Earth);
+    planetDisplays.push(Mars);
+    planetDisplays.push(Jupiter);
+    planetDisplays.push(Saturn);
+    planetDisplays.push(Uranus);
+    planetDisplays.push(Neptune);
+    planetDisplays.push(Pluto);
+}
+
+function rotatePlanetDisplays(dt) {
+    if (!toMainScreen) { return; }
+
+    for (let i = 0; i < planetDisplays.length; i++) {
+        let planetRotation = rotatePoint(planetDisplays[i].positionX, planetDisplays[i].positionY, canvas.width / 2, canvas.height / 2, planetDisplays[i].orbitSpeed * dt);
+        planetDisplays[i].positionX = planetRotation.x;
+        planetDisplays[i].positionY = planetRotation.y;
+    }
+}
+
+function scalePlanetsOnLoad(scaleSpeed) {
+    if (!toMainScreen) { return; }
+
+    if (scalingFactor < maxScale) {
+        scalingFactor += scaleSpeed;
+    }
+    else if (scalingFactor > maxScale) {
+        scalingFactor = maxScale;
+    }
+}
+
+function renderPlanetDisplays() {
+    if (!toMainScreen) { return; }
+
+    for (let i = 0; i < planetDisplays.length; i++) {
+        // Calculate the distance from the center
+        let planetFromCenterX = planetDisplays[i].positionX - canvas.width / 2;
+        let planetFromCenterY = planetDisplays[i].positionY - canvas.height / 2;
+
+        // Apply the scaling factor to the distance
+        let scaledPlanetFromCenterX = planetFromCenterX * scalingFactor;
+        let scaledPlanetFromCenterY = planetFromCenterY * scalingFactor;
+
+        // Recalculate the position using the scaled distance
+        let scaledPositionX = canvas.width / 2 + scaledPlanetFromCenterX + offsetX;
+        let scaledPositionY = canvas.height / 2 + scaledPlanetFromCenterY + offsetY;
+
+        ctx.beginPath();
+        ctx.fillStyle = planetDisplays[i].color;
+        ctx.arc(scaledPositionX, scaledPositionY, planetDisplays[i].size * scalingFactor, 0, Math.PI * 2);
+
+        if (planetDisplays[i].glow) {
+            ctx.shadowColor = planetDisplays[i].color;
+            ctx.shadowBlur = planetDisplays[i].glowStrength * scalingFactor;
+        } else {
+            ctx.shadowBlur = 0;
+        }
+
+        ctx.fill();
+        ctx.closePath();
+
+        for (let j = 0; j < planetDisplays[i].ringCount; j++) {
+            ctx.beginPath();
+            ctx.arc(scaledPositionX, scaledPositionY, planetDisplays[i].size * scalingFactor + (j + 1) * (planetDisplays[i].ringSpacing * scalingFactor), 0, 2 * Math.PI);
+            ctx.strokeStyle = planetDisplays[i].ringColor;
+            ctx.lineWidth = planetDisplays[i].ringSize * scalingFactor;
+            ctx.stroke();
+            ctx.closePath();
+        }
+
+        ctx.shadowColor = 'transparent';
+        ctx.shadowBlur = 0;
+
+        if (!renderDisplayNames) { continue; }
+
+        ctx.beginPath();
+        let fontSize = planetDisplays[i].size * scalingFactor * 0.1;
+        ctx.font = `${fontSize}vw Arial`;
+        ctx.textAlign = "center";
+        ctx.textBaseLine = "middle";
+        ctx.fillStyle = "white";
+        ctx.strokeStyle = "black";
+        let textX = scaledPositionX;
+        let textY = scaledPositionY - (2 * planetDisplays[i].size * scalingFactor) - (planetDisplays[i].ringCount * planetDisplays[i].ringSize * scalingFactor);
+        ctx.fillText(planetDisplays[i].name, textX, textY);
+/*        ctx.strokeText(planetDisplays[i].name, textX, textY);*/
+        ctx.closePath();
+    }
+}
+
+function lockOntoDisplayPlanet(planet) {
+
+    // Calculate the distance from the center
+    let planetFromCenterX = planet.positionX - canvas.width / 2;
+    let planetFromCenterY = planet.positionY - canvas.height / 2;
+
+    // Apply the scaling factor to the distance
+    let scaledPlanetFromCenterX = planetFromCenterX * scalingFactor;
+    let scaledPlanetFromCenterY = planetFromCenterY * scalingFactor;
+
+    // Recalculate the position using the scaled distance
+    let scaledPositionX = canvas.width / 2 + scaledPlanetFromCenterX;
+    let scaledPositionY = canvas.height / 2 + scaledPlanetFromCenterY;
+
+    offsetX = (canvas.width / 2) - scaledPositionX;
+    offsetY = (canvas.height / 2) - scaledPositionY;
+
+    console.log(offsetX);
+}
+
+function addPlanetsToList() {
+    for (let i = 0; i < planetDisplays.length; i++) {
+        document.querySelector('#planetDisplayBar ul').innerHTML += `
+        <li><button id="planetButton">${planetDisplays[i].name}</button></li>
+        `
+    }
+}
+
+
 
 //#endregion
 
@@ -302,14 +591,19 @@ function init() {
     toGalaxy = true;
 
     generateGalaxy();
+    initialisePlanetDisplays();
+    addPlanetsToList();
     calledInit = true; //we do not want to call init more than once, so we set the bool to true such that init will not be called again after the first frame
 }
 
 function update(dt) {
     //this function will run each frame of the loop, values to be updated should be placed here
     rotateGalaxy(dt);
-    generateWarp();
+    generateWarp(dt);
     moveWarp(dt);
+    scalePlanetsOnLoad(0.05    * dt);
+    rotatePlanetDisplays(dt);
+    lockOntoDisplayPlanet(Sun);
 }
 
 function render(dt) {
@@ -323,6 +617,7 @@ function render(dt) {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     renderGalaxy();
     renderWarp();
+    renderPlanetDisplays();
     
 }
 
