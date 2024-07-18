@@ -578,15 +578,23 @@ function lockOntoDisplayPlanet(planet) {
     let scaledPositionX = canvas.width / 2 + scaledPlanetFromCenterX;
     let scaledPositionY = canvas.height / 2 + scaledPlanetFromCenterY;
 
-    targetOffsetX = (canvas.width / 2) - scaledPositionX;
-    targetOffsetY = (canvas.height / 2) - scaledPositionY;
+    if (screen.width <= 800) {
+        offsetX = (canvas.width / 2) - scaledPositionX;
+        offsetY = (canvas.height / 2) - scaledPositionY;
+    }
+    else {
+        targetOffsetX = (canvas.width / 2) - scaledPositionX;
+        targetOffsetY = (canvas.height / 2) - scaledPositionY;
+
+    }
+
 
     let scaleRatioToSun = planet.size / Sun.size;
     targetScalingFactor = 1 / scaleRatioToSun;
 }
 
 function updateCameraPosition() {
-    let offsetSpeed = 2 * Math.max(1, planetToView.orbitSpeed * timeScale);
+    let offsetSpeed = Math.max(1, planetToView.orbitSpeed * timeScale);
 
     // Smoothly transition the offset X
     if (Math.abs(offsetX - targetOffsetX) < offsetSpeed) {
