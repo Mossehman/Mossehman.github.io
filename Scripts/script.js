@@ -120,7 +120,8 @@ const starDisplay = {
     color: "#fae684",
 
     hasGlow: false,
-    glowValue: 10
+    glowValue: 10,
+    toRender: true
 }
 
 let toGalaxy = false;
@@ -176,19 +177,101 @@ function rotateGalaxy(dt) {
     }
 }
 
+function renderGalaxy() {
+    if (!toGalaxy) { return; }
+    for (let i = 0; i < galaxyStars.length; i++) {
+        if (galaxyStars[i].toRender == false) { continue; }
+        ctx.beginPath();
+        ctx.fillStyle = galaxyStars[i].color;
+        ctx.arc(galaxyStars[i].x, galaxyStars[i].y, galaxyStars[i].size, 0, 2 * Math.PI);
+        ctx.fill();
+    }
+}
+
 
 
 function transitionToWarp() {
     if (toWarp) { return; }
     toWarp = true;
-    windowZoomSpeed += 0.015;
+    windowZoomSpeed += 0.02;
     document.getElementById("whiteTransition").style.opacity = '100%';
+
+    setTimeout(() => {
+        warpInit()
+    }, 1200);
+    console.log("Switched to warp scene!"); //TODO: remove this
 }
 
 //#endregion
 
 //#region warpLoadingScreen
 
+const maxStarPerFrame = 4;
+const minStarPerFrame = 0;
+let warpStars = [];
+let warpStarDirX = [];
+let warpStarDirY = [];
+function warpInit() {
+    toGalaxy = false;
+    document.getElementById("whiteTransition").style.transitionDuration = '0.6s';
+    document.getElementById("whiteTransition").style.opacity = '0%';
+    windowZoom = 0;
+    windowZoomSpeed = 0;
+}
+
+function generateWarp() {
+    if (toWarp == false) { return; }
+    let starWarpCount = generateRandomLambda(minStarPerFrame, maxStarPerFrame, (minStarPerFrame + maxStarPerFrame) * 0.5, 30);
+    for (let i = 0; i < starWarpCount; i++) {
+        let warpStar = Object.create(starDisplay);
+        warpStar.positionX = canvas.width / 2;
+        warpStar.positionY = canvas.height / 2;
+
+        warpStar.size = 1;
+        warpStar.speed = 1500;
+
+        let randXPos = generateRandomArbitrary(canvas.width / 2 - 10, canvas.width / 2 + 10);
+        let randYPos = generateRandomArbitrary(canvas.height / 2 - 10, canvas.height / 2 + 10);
+
+        warpStarDirX.push(randXPos - canvas.width / 2);
+        warpStarDirY.push(randYPos - canvas.height / 2);
+
+        warpStars.push(warpStar);
+    }
+}
+
+function moveWarp(dt) {
+    if (toWarp == false) { return; }
+    console.log(warpStars[0].size);
+    for (let i = 0; i < warpStars.length; i++) {
+
+        if (warpStars[i].positionX < -10 || warpStars[i].positionX > canvas.width + 10 || warpStars[i].positionY < -10 || warpStars[i].positionY > canvas.height + 10 || warpStars[i].toRender == false) {
+            warpStars[i].toRender = false;
+            continue;
+        }
+
+        let direction = normalize(warpStarDirX[i], warpStarDirY[i]);
+        warpStars[i].positionX += direction.x * warpStars[i].speed * dt;
+        warpStars[i].positionY += direction.y * warpStars[i].speed * dt;
+        warpStars[i].size = Math.sqrt(Math.pow(warpStars[i].positionX - (canvas.width / 2), 2) + Math.pow(warpStars[i].positionY - (canvas.height / 2), 2)) * 0.3;
+
+    }
+
+}
+
+function renderWarp() {
+    if (toWarp == false || toGalaxy == true) { return; }
+
+
+    for (let i = 0; i < warpStars.length; i++) {
+        if (warpStars[i].toRender == false) { continue; }
+
+        ctx.beginPath();
+        ctx.arc(warpStars[i].positionX, warpStars[i].positionY, 0.02 * warpStars[i].size, 0, Math.PI * 2);
+        ctx.fillStyle = "white";
+        ctx.fill(); 
+    }
+}
 //#endregion
 
 //#endregion
@@ -225,9 +308,12 @@ function init() {
 function update(dt) {
     //this function will run each frame of the loop, values to be updated should be placed here
     rotateGalaxy(dt);
+    generateWarp();
+    moveWarp(dt);
 }
 
 function render(dt) {
+    //this function will run each frame of the loop, elements to be rendered should be placed here
 
     windowZoom += windowZoomSpeed;
     updateCanvasSize(1 + windowZoom);
@@ -235,14 +321,9 @@ function render(dt) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = "black";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    for (let i = 0; i < galaxyStars.length; i++) {
-        ctx.beginPath();
-        ctx.fillStyle = galaxyStars[i].color;
-        ctx.arc(galaxyStars[i].x, galaxyStars[i].y, galaxyStars[i].size, 0, 2 * Math.PI);
-        ctx.fill();
-    }
-    //this function will run each frame of the loop, elements to be rendered should be placed here
+    renderGalaxy();
+    renderWarp();
+    
 }
 
 
