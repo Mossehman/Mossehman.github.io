@@ -569,30 +569,49 @@ let xLock = false;
 let yLock = false;
 let hasZoomedOut = true;
 
-function selectPlanet() {
+let hasCalculatedZoomTime = false;
+let hasCalculatedMoveTime = false;
+function selectPlanet(dt) {
     for (let i = 0; i < planetButtons.length; i++) {
         planetButtons[i].onclick = function () {
             planetToView = planetDisplays[i];
             xLock = false;
             yLock = false;
             hasZoomedOut = false;
+
+            hasCalculatedZoomTime = false;
+            hasCalculatedMoveTime = false;
             lockOntoDisplayPlanet(planetToView);  // Lock onto the planet when it is selected
         };
     }
 
-    zoomOut();
-    updateCameraPosition();
+    zoomOut(1, dt);
+    updateCameraPosition(2, dt);
     updateZoomLevel();
 }
 
-function zoomOut() {
-    if (hasZoomedOut) { return; }
-    let zoomOutSpeed = 0.5;
 
-    if (windowZoom > 1) {
-        windowZoom -= zoomOutSpeed;
+let initZoom;
+let targetZoom;
+let amtToZoom;
+let zoomSpeed;
+function zoomOut(targetTime, dt) {
+    if (hasZoomedOut) { return; }
+
+
+    if (!hasCalculatedZoomTime)
+    {
+        initZoom = windowZoom;
+        targetZoom = 1;
+        amtToZoom = initZoom - targetZoom;
+        zoomSpeed = amtToZoom / targetTime;
+        hasCalculatedZoomTime = true;
     }
-    else if (windowZoom <= 1) {
+
+    if (windowZoom > targetZoom) {
+        windowZoom -= zoomSpeed * dt;
+    }
+    else if (windowZoom <= targetZoom) {
         windowZoom = 1;
         hasZoomedOut = true;
     }
@@ -624,36 +643,58 @@ function lockOntoDisplayPlanet(planet) {
     targetScalingFactor = 1 / scaleRatioToSun;
 }
 
-function updateCameraPosition() {
+let amtToOffsetX;
+let amtToOffsetY;
+
+let offsetSpeedX;
+let offsetSpeedY;
+function updateCameraPosition(targetTime, dt) {
 
     if (!hasZoomedOut) { return; }
-    let offsetSpeed = 1;
+
+    if (!hasCalculatedMoveTime) {
+        hasCalculatedMoveTime = true;
+        
+        amtToOffsetX = Math.abs(targetOffsetX - offsetX);
+        amtToOffsetY = Math.abs(targetOffsetY - offsetY);
+
+        offsetSpeedX = amtToOffsetX / targetTime;
+        offsetSpeedY = amtToOffsetY / targetTime;
+    }
+
+    if (xLock && yLock) {
+        offsetX = targetOffsetX;
+        offsetY = targetOffsetY;
+        return;
+    }
+
+    console.log(offsetX - targetOffsetX);
 
     // Smoothly transition the offset X
-    if (Math.abs(offsetX - targetOffsetX) < offsetSpeed) {
+    if (Math.abs(offsetX - targetOffsetX) < offsetSpeedX * dt * 30) {
         offsetX = targetOffsetX;
         xLock = true;
     } else if (offsetX < targetOffsetX) {
-        offsetX += offsetSpeed;
+        offsetX += offsetSpeedX * dt;
     } else if (offsetX > targetOffsetX) {
-        offsetX -= offsetSpeed;
+        offsetX -= offsetSpeedX * dt;
     }
 
     // Smoothly transition the offset Y
-    if (Math.abs(offsetY - targetOffsetY) < offsetSpeed) {
+    if (Math.abs(offsetY - targetOffsetY) < offsetSpeedY * dt * 30) {
         offsetY = targetOffsetY;
         yLock = true;
     } else if (offsetY < targetOffsetY) {
-        offsetY += offsetSpeed;
+        offsetY += offsetSpeedY * dt;
     } else if (offsetY > targetOffsetY) {
-        offsetY -= offsetSpeed;
+        offsetY -= offsetSpeedY * dt;
     }
 }
 
 function updateZoomLevel() {
     if (!canInteractWithMainMenu || !hasZoomedOut) { return; }
 
-    let scaleSpeed = 0.05; // Adjusted to ensure smoother transitions
+    let scaleSpeed = 0.2; // Adjusted to ensure smoother transitions
 
     // Smoothly transition the zoom level
     if (Math.abs(windowZoom - targetScalingFactor) < scaleSpeed) {
@@ -706,7 +747,7 @@ function update(dt) {
     moveWarp(dt);
     scalePlanetsOnLoad(0.05 * dt);
     rotatePlanetDisplays(dt);
-    selectPlanet();
+    selectPlanet(dt);
     lockOntoDisplayPlanet(planetToView);
 }
 
