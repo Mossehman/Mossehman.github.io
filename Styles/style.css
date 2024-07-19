@@ -46,7 +46,6 @@ body {
 #planetDisplayBar ul {
     border: none;
     background-color: transparent;
-
     background-repeat: no-repeat;
     width: 100%;
     display: flex;
@@ -67,6 +66,10 @@ body {
     justify-content: center;
     align-items: center;
     box-sizing: border-box;
+    
+    transform: translate(-10vw, 0);
+    transition: transform;
+
 }
 
 #planetDisplayBar ul li button {
@@ -81,7 +84,7 @@ body {
     height: 100%;
     font-size: 1vw;
     color: white;
-    transition: font-size, text-decoration, background-color;
+    transition: font-size, text-decoration, background-color, transform;
     transition-duration: 0.2s;
 }
 

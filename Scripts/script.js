@@ -480,7 +480,19 @@ function scalePlanetsOnLoad(scaleSpeed) {
     else if (scalingFactor >= maxScale) {
         scalingFactor = maxScale;
         document.getElementById("planetDisplayBar").style.transitionDuration = "0.6s";
-        document.getElementById("planetDisplayBar").style.transform = 'translate(0, 0)';    
+        document.getElementById("planetDisplayBar").style.transform = 'translate(0, 0)';
+
+        let ulElements = document.querySelectorAll("#planetDisplayBar ul li");
+        let listArray = Array.from(ulElements);
+
+        let listAnimDelay = 0;
+
+        for (let i = 0; i < listArray.length; i++) {
+            listArray[i].style.transitionDuration = `${listAnimDelay}s`;
+            listArray[i].style.transform = "translate(0, 0)";
+            listAnimDelay += 0.2;
+        }
+
         canInteractWithMainMenu = true;
     }
 }
