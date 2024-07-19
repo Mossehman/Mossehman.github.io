@@ -1,6 +1,5 @@
 const canvas = document.getElementById("myCanvas");
 const ctx = canvas.getContext("2d");
-window.console = window.console || function (t) { }; //if no window, provide empty function for a fallback, good practice
 let windowZoomSpeed = 0;
 let windowZoom = 0;
 const phoneWidth = 800;
@@ -596,11 +595,11 @@ const asteroidBeltDisplay = {
     asteroidCountLDM: 300,
     asteroidCountHD: 3000,
 
-    asteroidMinSizeLDM: 3,
-    asteroidMaxSizeLDM: 5,
+    asteroidMinSizeLDM: 10,
+    asteroidMaxSizeLDM: 20,
 
-    asteroidMinSizeHD: 0.6,
-    asteroidMaxSizeHD: 0.9,
+    asteroidMinSizeHD: 0.4,
+    asteroidMaxSizeHD: 4,
 
     asteroidColors: [],
     asteroidDefaultColor: "grey",
@@ -615,9 +614,13 @@ newBelt.thickness = 3000;
 
 let kuiperBelt = Object.create(asteroidBeltDisplay);
 kuiperBelt.distanceFromCenter = 45010;
-kuiperBelt.thickness = 500;
-kuiperBelt.asteroidCountLDM = 5000;
-kuiperBelt.asteroidCountHD = 5000;
+
+kuiperBelt.asteroidMinSizeHD = 0.4;
+kuiperBelt.asteroidMaxSizeHD = 4;
+
+kuiperBelt.thickness = 10000;
+kuiperBelt.asteroidCountLDM = 10000;
+kuiperBelt.asteroidCountHD = 11000;
 
 function generateAsteroidBelt(belt) {
     belt.asteroidsLDM = [];
@@ -630,7 +633,7 @@ function generateAsteroidBelt(belt) {
         newLDMasteroid.positionX = randAnnulusPt.x; //generate the asteroid display's position around the ring
         newLDMasteroid.positionY = randAnnulusPt.y;
 
-        newLDMasteroid.size = generateRandomArbitrary(belt.asteroidMinSizeLDM, belt.asteroidMaxSizeLDM); //randomise the size based on the min and max LDM size for the asteroid belt
+        newLDMasteroid.size = generateRandomArbitrary(belt.asteroidMinSizeLDM * relativePlanetScaling, belt.asteroidMaxSizeLDM * relativePlanetScaling); //randomise the size based on the min and max LDM size for the asteroid belt
         if (belt.asteroidColors.length > 0) {
             newLDMasteroid.color = belt.asteroidColors[Math.floor(generateRandomArbitrary(0, belt.asteroidColors.length - 1))]; //randomise colors if there are values within the array of asteroid colors
         }
@@ -647,7 +650,7 @@ function generateAsteroidBelt(belt) {
 
         newAsteroid.positionX = randAnnulusPt.x;
         newAsteroid.positionY = randAnnulusPt.y;
-        newAsteroid.size = generateRandomArbitrary(belt.asteroidMinSizeHD, belt.asteroidMaxSizeHD);
+        newAsteroid.size = generateRandomArbitrary(belt.asteroidMinSizeHD * relativePlanetScaling, belt.asteroidMaxSizeHD * relativePlanetScaling);
 
 
         if (belt.asteroidColors.length > 0) {
