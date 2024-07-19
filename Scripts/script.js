@@ -35,6 +35,8 @@ function resetCanvasPositions() {
     generateGalaxy();
     hideCurrentStars();
     initialisePlanetDisplays();
+    generateAsteroidBelt(newBelt);
+    generateAsteroidBelt(kuiperBelt);
 }
 //#endregion
 
@@ -55,6 +57,20 @@ function generateRandomLambda(min, max, mean, stdDeviation) {
 
     // Ensure the result is within the bounds
     return Math.min(Math.max(randNormal, min), max);
+}
+function generateRandomAnnulus(rMin, rMax, centerX, centerY) {
+    // Draw theta uniformly on [0, 2*pi)
+    let theta = Math.random() * 2 * Math.PI;
+
+    // Draw r from the power-law distribution
+    let A = 2 / (rMax * rMax - rMin * rMin);
+    let r = Math.sqrt(Math.random() / A + rMin * rMin);
+
+    // Compute (x, y) by the usual transformation from radial coordinates
+    let x = r * Math.cos(theta) + centerX;
+    let y = r * Math.sin(theta) + centerY;
+
+    return { x, y };
 }
 
 function rotatePoint(x, y, cx, cy, angle) {
@@ -96,6 +112,7 @@ function interpolateColors(color1, color2, percent) {
     // Convert the interpolated RGB values back to a hex color
     return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
 }
+
 
 //#endregion
 
@@ -299,6 +316,7 @@ function hideCurrentStars() {
 function transitionToMainScreen() {
     toWarp = false;
     toMainScreen = true;  
+    generateAsteroidBelt(newBelt);
 
 }
 //#endregion
@@ -306,6 +324,8 @@ function transitionToMainScreen() {
 //#endregion
 
 //#region mainMenu
+
+//#region planetDisplays
 const PlanetDisplay = {
     name: "Planet",
     positionX: 0,
@@ -493,6 +513,7 @@ function scalePlanetsOnLoad(scaleSpeed) {
             listAnimDelay += 0.2;
         }
 
+
         canInteractWithMainMenu = true;
     }
 }
@@ -550,6 +571,134 @@ function renderPlanetDisplays() {
     }
 }
 
+//#endregion
+
+//#region asteroidDisplays
+
+let highResAsteroids = true;
+
+const asteroidDisplay = {
+    positionX: 0,
+    positionY: 0,
+    size: 0,
+    color: "",
+    toRender: true
+}
+
+const asteroidBeltDisplay = {
+    thickness: 300,
+    distanceFromCenter: 250,
+
+    windowLODzoom: 5,
+    chunkCountX: 4,
+    chunkCountY: 4,
+
+    asteroidCountLDM: 300,
+    asteroidCountHD: 3000,
+
+    asteroidMinSizeLDM: 3,
+    asteroidMaxSizeLDM: 5,
+
+    asteroidMinSizeHD: 0.6,
+    asteroidMaxSizeHD: 0.9,
+
+    asteroidColors: [],
+    asteroidDefaultColor: "grey",
+
+    asteroidsLDM: [],
+    asteroidsHD: []
+}
+
+let newBelt = Object.create(asteroidBeltDisplay);
+newBelt.distanceFromCenter = 3400;
+newBelt.thickness = 3000;
+
+let kuiperBelt = Object.create(asteroidBeltDisplay);
+kuiperBelt.distanceFromCenter = 45010;
+kuiperBelt.thickness = 500;
+kuiperBelt.asteroidCountLDM = 5000;
+kuiperBelt.asteroidCountHD = 5000;
+
+function generateAsteroidBelt(belt) {
+    belt.asteroidsLDM = [];
+    belt.asteroidsHD = [];
+
+    for (let i = 0; i < belt.asteroidCountLDM; i++) {
+        const randAnnulusPt = generateRandomAnnulus(belt.distanceFromCenter * relativePlanetScaling, (belt.distanceFromCenter + belt.thickness) * relativePlanetScaling, canvas.width/2, canvas.height/2);
+        let newLDMasteroid = Object.create(asteroidDisplay); //create a new LDM asteroid display
+
+        newLDMasteroid.positionX = randAnnulusPt.x; //generate the asteroid display's position around the ring
+        newLDMasteroid.positionY = randAnnulusPt.y;
+
+        newLDMasteroid.size = generateRandomArbitrary(belt.asteroidMinSizeLDM, belt.asteroidMaxSizeLDM); //randomise the size based on the min and max LDM size for the asteroid belt
+        if (belt.asteroidColors.length > 0) {
+            newLDMasteroid.color = belt.asteroidColors[Math.floor(generateRandomArbitrary(0, belt.asteroidColors.length - 1))]; //randomise colors if there are values within the array of asteroid colors
+        }
+        else {
+            newLDMasteroid.color = belt.asteroidDefaultColor; //else generate using the default color
+        }
+
+        belt.asteroidsLDM.push(newLDMasteroid); //push asteroid display to the list of LDM asteroids
+    }
+
+    for (let i = 0; i < belt.asteroidCountHD; i++) {
+        const randAnnulusPt = generateRandomAnnulus(belt.distanceFromCenter * relativePlanetScaling, (belt.distanceFromCenter + belt.thickness) * relativePlanetScaling, canvas.width / 2, canvas.height / 2); //generate random points about the ring
+        let newAsteroid = Object.create(asteroidDisplay);
+
+        newAsteroid.positionX = randAnnulusPt.x;
+        newAsteroid.positionY = randAnnulusPt.y;
+        newAsteroid.size = generateRandomArbitrary(belt.asteroidMinSizeHD, belt.asteroidMaxSizeHD);
+
+
+        if (belt.asteroidColors.length > 0) {
+            newAsteroid.color = belt.asteroidColors[Math.floor(generateRandomArbitrary(0, belt.asteroidColors.length - 1))]; //randomise colors if there are values within the array of asteroid colors
+        }
+        else {
+            newAsteroid.color = belt.asteroidDefaultColor; //else generate using the default color
+        }
+
+        belt.asteroidsHD.push(newAsteroid);
+
+    }
+}
+
+function renderAsteroids(belt) {
+    const asteroids = windowZoom < belt.windowLODzoom || !highResAsteroids ? belt.asteroidsLDM : belt.asteroidsHD;
+
+    for (let i = 0; i < asteroids.length; i++) {
+        let asteroid = asteroids[i];
+
+        // Calculate asteroid position relative to canvas center
+        let asteroidFromCenterX = asteroid.positionX - canvas.width / 2;
+        let asteroidFromCenterY = asteroid.positionY - canvas.height / 2;
+
+        // Apply scaling factor
+        let scaledAsteroidFromCenterX = asteroidFromCenterX * scalingFactor;
+        let scaledAsteroidFromCenterY = asteroidFromCenterY * scalingFactor;
+
+        // Calculate final position with offsets
+        let scaledAsteroidPosX = canvas.width / 2 + scaledAsteroidFromCenterX + offsetX;
+        let scaledAsteroidPosY = canvas.height / 2 + scaledAsteroidFromCenterY + offsetY;
+
+        if (scaledAsteroidPosX + asteroid.size * scalingFactor < 0 || scaledAsteroidPosX - asteroid.size * scalingFactor > canvas.width ||
+            scaledAsteroidPosY + asteroid.size * scalingFactor < 0 || scaledAsteroidPosY - asteroid.size * scalingFactor > canvas.height) {
+            continue;
+        }
+
+        // Draw the asteroid
+        ctx.beginPath();
+        ctx.fillStyle = asteroid.color;
+        ctx.arc(scaledAsteroidPosX, scaledAsteroidPosY, asteroid.size * scalingFactor, 0, 2 * Math.PI);
+        ctx.fill();
+        ctx.closePath();
+    }
+}
+
+
+
+//#endregion
+
+//#region interactiveMenu
 let planetButtons = [];
 function addPlanetsToList() {
     for (let i = 0; i < planetDisplays.length; i++) {
@@ -668,8 +817,6 @@ function updateCameraPosition(targetTime, dt) {
         return;
     }
 
-    console.log(offsetX - targetOffsetX);
-
     // Smoothly transition the offset X
     if (Math.abs(offsetX - targetOffsetX) < offsetSpeedX * dt * 30) {
         offsetX = targetOffsetX;
@@ -705,6 +852,7 @@ function updateZoomLevel() {
         windowZoom -= scaleSpeed;
     }
 }
+//#endregion
 
 //#endregion
 
@@ -763,6 +911,8 @@ function render(dt) {
     renderGalaxy();
     renderWarp();
     renderPlanetDisplays();
+    renderAsteroids(newBelt);
+    renderAsteroids(kuiperBelt);
     
 }
 
