@@ -7,12 +7,15 @@ body {
     overflow-x: hidden;
     overflow-y: hidden;
     margin: 0;
+    background-color: rgb(38, 38, 38);
 }
 
 #myCanvas {
     width: 100vw;
     height: 100vh;
     display: block;
+    margin: 0;
+    padding: 0;
     object-fit: contain;
     position: absolute;
 }
@@ -40,8 +43,6 @@ body {
     transition: transform;
     transform: translate(-20vw, 0);
 }
-
-
 
 #planetDisplayBar ul {
     border: none;
@@ -92,3 +93,116 @@ body {
     font-size: 2vw;
     text-decoration: underline;
 }
+
+
+#planetButtons {
+    width: 20vw;
+    height: 8vh;
+    position: absolute;
+    top: 1%;
+    right: 0;
+    background-color: rgba(128, 128, 128, 0.2);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    transition: transform;
+    transition-duration: 0.4s;
+}
+
+#planetButtons ul {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+}
+
+#planetButtons ul li {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+#planetButtons ul li button {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    margin: 0 5%;
+}
+
+#planetButtons ul li button img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+
+#planetDescriptions
+{
+    width: 40vw;
+    height: 100%;
+    position: absolute;
+    right: 0;
+    background-color: rgba(0, 255, 33, 0.4);
+    transform: translate(40vw, 0);
+    transition: transform;
+    transition-duration: 0.8s;
+}
+
+#descTitleBar {
+    width: 100%;
+    height: auto;
+    min-height: 2vh;
+    background-color: rgb(26, 212, 246, 0.40);
+    display: flex;
+    flex-direction: row;
+    overflow: hidden;
+}
+
+#planetName {
+    height: 100%;
+    width: 100%;
+    flex: 0.8;
+    font-size: 5vw;
+    box-sizing: border-box;
+}
+
+#descTitleBar button {
+    flex: 0.2;
+    max-height: 5vh;
+}
+
+
+#descBody {
+    width: 100%;
+    height: 100%;
+    overflow-y: scroll;
+    background-color: rgba(255, 0, 0, 0.53);
+    box-sizing: border-box;
+    padding-left: 2%;
+    padding-bottom: 20%;
+}
+
+#descBody::-webkit-scrollbar {
+    width: 10px; /* scrollbar width */
+}
+
+#descBody::-webkit-scrollbar-track {
+    background: transparent; /* hide scrollbar bg */
+}
+
+#descBody::-webkit-scrollbar-thumb {
+    background-color: white; /* scrollbar color on webkit browsers */
+    border-radius: 10px; /* rounder scrollbar edges */
+}
+
+#descBody {
+    scrollbar-width: thin;
+    scrollbar-color: black transparent; /* set scrollbar color to black */
+}
+
