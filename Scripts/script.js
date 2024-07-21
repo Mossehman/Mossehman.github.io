@@ -36,10 +36,6 @@ function resetCanvasPositions() {
     generateAsteroidBelt(newBelt);
     generateAsteroidBelt(kuiperBelt);
 
-    if (!planetDescToggled) { 
-        document.getElementById("planetDescriptions").style.display = "none";
-    }
-
 }
 //#endregion
 
@@ -737,6 +733,19 @@ function scalePlanetsOnLoad(scaleSpeed) {
             listAnimDelay += 0.2;
         }
 
+        document.getElementById("planetButtons").style.transitionDuration = "0.4s";
+        document.getElementById("planetButtons").style.transform = "translate(0, 0)";
+
+        ulElements = document.querySelectorAll("#planetButtons ul li");
+        listArray = Array.from(ulElements);
+
+        listAnimDelay = 0;
+
+        for (let i = 0; i < listArray.length; i++) {
+            listArray[i].style.transitionDuration = `${listAnimDelay}s`;
+            listArray[i].style.transform = "translate(0, 0)";
+            listAnimDelay += 1;
+        }
 
         canInteractWithMainMenu = true;
     }
@@ -1110,16 +1119,17 @@ function updateZoomLevel() {
 //#endregion
 
 //#region planetInfo
-
-let planetDescToggled = false;
 document.getElementById("toggleInfo").onclick = function () {
     document.getElementById("planetDescriptions").style.transitionDuration = "0.8s";
     document.getElementById("planetDescriptions").style.transform = `translate(0, 0)`;
-    document.getElementById("planetDescriptions").style.display = "block";
 
     document.getElementById("planetButtons").style.transitionDuration = "0.4s";
-    document.getElementById("planetButtons").style.transform = `translate(0, -10vh)`;
-    planetDescToggled = true;
+    document.getElementById("planetButtons").style.transform = `translate(0, -20vh)`;
+
+    setTimeout(() => {
+        document.getElementById("planetButtons").style.transitionDuration = "0s";
+    }, 0.4);
+
 };
 
 document.querySelector("#descTitleBar button").onclick = function () {
@@ -1127,7 +1137,10 @@ document.querySelector("#descTitleBar button").onclick = function () {
     document.getElementById("planetDescriptions").style.transform = `translate(40vw, 0)`;
     document.getElementById("planetButtons").style.transitionDuration = "0.8s";
     document.getElementById("planetButtons").style.transform = `translate(0, 0)`;
-    planetDescToggled = false;
+
+    setTimeout(() => {
+        document.getElementById("planetDescriptions").style.transitionDuration = "0s";
+    }, 0.4);
 };
 
 

@@ -32,6 +32,13 @@ body {
     transition-duration: 1.2s;
 }
 
+#screenSpace {
+    height: 100vh;
+    width: 100vw;
+    position: absolute;
+    overflow: hidden;
+}
+
 #planetDisplayBar {
     position: absolute;
     float: left;
@@ -97,7 +104,7 @@ body {
 
 #planetButtons {
     width: 20vw;
-    height: 8vh;
+    height: 10vh;
     position: absolute;
     top: 1%;
     right: 0;
@@ -105,9 +112,10 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
+    transform: translate(0, -20vh);
 
     transition: transform;
-    transition-duration: 0.4s;
+    transition-duration: 0s;
 }
 
 #planetButtons ul {
@@ -126,6 +134,7 @@ body {
     justify-content: center;
     align-items: center;
     overflow: hidden;
+    transform: translate(0, -15vh);
 }
 
 #planetButtons ul li button {
@@ -144,7 +153,6 @@ body {
 
 #planetDescriptions
 {
-    display: none;
     width: 40vw;
     height: 100%;
     position: absolute;
@@ -152,7 +160,6 @@ body {
     background-color: rgba(0, 255, 33, 0.4);
     transform: translate(40vw, 0);
     transition: transform;
-    transition-duration: 0.8s;
 }
 
 #descTitleBar {
@@ -185,8 +192,6 @@ body {
     overflow-y: scroll;
     background-color: rgba(255, 0, 0, 0.53);
     box-sizing: border-box;
-    padding-left: 2%;
-    padding-bottom: 20%;
 }
 
 #descBody::-webkit-scrollbar {
