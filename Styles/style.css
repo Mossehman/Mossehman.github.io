@@ -144,6 +144,7 @@ body {
 
 #planetDescriptions
 {
+    display: none;
     width: 40vw;
     height: 100%;
     position: absolute;
