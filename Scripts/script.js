@@ -325,8 +325,16 @@ function transitionToMainScreen() {
 let scalingFactor = 0;
 let relativePlanetScaling = 0.1;
 let relativeDistanceScaling = 0.1;
+
+let initDistanceScaling = relativeDistanceScaling;
+let initSizeScaling = relativePlanetScaling;
 let timeScale = 1;  
 let maxScale = 0.5;
+let renderTextures = true;
+let ldmAsteroids = false;
+let torenderAsteroids = true;
+let torenderMoons = true;
+let renderDisplayNames = true;
 
 //#region moons
 const moonDisplay = {
@@ -347,6 +355,7 @@ const moonDisplay = {
 
 function renderMoons() {
     if (!toMainScreen) { return; }
+    if (!torenderMoons) { return; }
 
     for (let i = 0; i < planetDisplays.length; i++) {
         if (planetDisplays[i] != planetToView) { continue; }
@@ -525,8 +534,6 @@ let offsetY = 0;
 let targetOffsetX = 0;
 let targetOffsetY = 0;
 
-let renderDisplayNames = true;
-
 
 let Sun = Object.create(PlanetDisplay);
 let Mercury = Object.create(PlanetDisplay);
@@ -671,7 +678,6 @@ function initialisePlanetDisplays() {
     planetDisplays.push(Saturn);
     planetDisplays.push(Uranus);
     planetDisplays.push(Neptune);
-    planetDisplays.push(Pluto);
 
     for (let i = 0; i < planetDisplays.length; i++) {
         if (planetDisplays[i].moons.length == 0) { continue; }
@@ -696,7 +702,7 @@ function rotatePlanetDisplays(dt) {
         planetDisplays[i].positionY = planetRotation.y;
 
         for (let j = 0; j < planetDisplays[i].moons.length; j++) {
-            let thisMoon = planetDisplays[i].moons[j]
+            let thisMoon = planetDisplays[i].moons[j];
             {
                 //move the moon based on the difference in positions between frames of the planet, such that the moon follows said planet
                 thisMoon.positionX += planetDisplays[i].positionX - lastX;
@@ -786,7 +792,7 @@ function renderPlanetDisplays() {
         ctx.clip();
         ctx.fillStyle = planetDisplays[i].color;
         ctx.fill();
-        if (planetDisplays[i].imageTexture != "" && (i == 0 || planetDisplays[i] == planetToView)) {
+        if (planetDisplays[i].imageTexture != "" && (i == 0 || planetDisplays[i] == planetToView) && renderTextures == true) {
             let planetTexture = new Image();
             planetTexture.src = planetDisplays[i].imageTexture;
             ctx.drawImage(planetTexture, scaledPositionX + planetDisplays[i].imageOffsetX - planetDisplays[i].size * scalingFactor,
@@ -827,8 +833,6 @@ function renderPlanetDisplays() {
 //#endregion
 
 //#region asteroidDisplays
-
-let highResAsteroids = true;
 
 const asteroidDisplay = {
     positionX: 0,
@@ -922,7 +926,9 @@ function generateAsteroidBelt(belt) {
 }
 
 function renderAsteroids(belt) {
-    const asteroids = windowZoom < belt.windowLODzoom || !highResAsteroids ? belt.asteroidsLDM : belt.asteroidsHD;
+    if (!torenderAsteroids) { return; }
+
+    const asteroids = windowZoom < belt.windowLODzoom || !ldmAsteroids ? belt.asteroidsLDM : belt.asteroidsHD;
 
     for (let i = 0; i < asteroids.length; i++) {
         let asteroid = asteroids[i];
@@ -986,6 +992,9 @@ function selectPlanet(dt) {
             xLock = false;
             yLock = false;
             hasZoomedOut = false;
+            setSidebarDesc();
+            document.getElementById("planetName").innerHTML = planetToView.name;
+            document.getElementById("descBody").scrollTop = "0";
 
             hasCalculatedZoomTime = false;
             hasCalculatedMoveTime = false;
@@ -1126,6 +1135,8 @@ document.getElementById("toggleInfo").onclick = function () {
     document.getElementById("planetButtons").style.transitionDuration = "0.4s";
     document.getElementById("planetButtons").style.transform = `translate(0, -20vh)`;
 
+    setSidebarDesc();
+
     setTimeout(() => {
         document.getElementById("planetButtons").style.transitionDuration = "0s";
     }, 0.4);
@@ -1138,12 +1149,114 @@ document.querySelector("#descTitleBar button").onclick = function () {
     document.getElementById("planetButtons").style.transitionDuration = "0.8s";
     document.getElementById("planetButtons").style.transform = `translate(0, 0)`;
 
+
     setTimeout(() => {
         document.getElementById("planetDescriptions").style.transitionDuration = "0s";
     }, 0.4);
 };
 
+document.getElementById("toggleSettings").onclick = function () {
+    document.getElementById("planetSettings").style.transitionDuration = "0.8s";
+    document.getElementById("planetSettings").style.transform = `translate(0, 0)`;
 
+    document.getElementById("planetButtons").style.transitionDuration = "0.4s";
+    document.getElementById("planetButtons").style.transform = `translate(0, -20vh)`;
+
+    setTimeout(() => {
+        document.getElementById("planetButtons").style.transitionDuration = "0s";
+    }, 0.4);
+};
+
+document.querySelector("#settingsTitleBar button").onclick = function () {
+    document.getElementById("planetSettings").style.transitionDuration = "0.4s";
+    document.getElementById("planetSettings").style.transform = `translate(40vw, 0)`;
+    document.getElementById("planetButtons").style.transitionDuration = "0.8s";
+    document.getElementById("planetButtons").style.transform = `translate(0, 0)`;
+
+    setTimeout(() => {
+        document.getElementById("planetSettings").style.transitionDuration = "0s";
+    }, 0.4);
+};
+
+
+function setSidebarDesc() {
+    let descID = document.getElementById("desc" + planetToView.name);
+    let allDesc = document.querySelectorAll(".description");
+
+    allDesc.forEach(desc => {
+        desc.style.opacity = "0";
+        desc.style.display = "none";
+    });
+
+    descID.style.display = "block";
+    descID.style.opacity = "100%";
+}
+
+const rangeInputZoom = document.querySelector('#scalingFactorInput .scaleToInput .rangeInput');
+const numberInputZoom = document.querySelector('#scalingFactorInput .scaleToInput .numericalInput');
+
+// Synchronize number input with slider input
+numberInputZoom.addEventListener('input', function () {
+    rangeInputZoom.value = numberInputZoom.value;
+    scalingFactor = (numberInputZoom.value / 100) * maxScale;
+    resetCanvasPositions();
+});
+
+// Synchronize slider input with number input
+rangeInputZoom.addEventListener('input', function () {
+    numberInputZoom.value = rangeInputZoom.value;
+    scalingFactor = (rangeInputZoom.value / 100) * maxScale;
+    resetCanvasPositions();
+});
+
+const rangeInputDistance = document.querySelector('#distanceScalingInput .scaleToInput .rangeInput');
+const numberInputDistance = document.querySelector('#distanceScalingInput .scaleToInput .numericalInput');
+
+// Synchronize number input with slider input
+numberInputDistance.addEventListener('input', function () {
+    rangeInputDistance.value = numberInputDistance.value;
+    relativeDistanceScaling = numberInputDistance.value / 100 * initDistanceScaling;
+    let distanceRatio = calculateDistanceRatio(); // Capture the returned object
+    resetCanvasPositions();
+});
+
+// Synchronize slider input with number input
+rangeInputDistance.addEventListener('input', function () {
+    numberInputDistance.value = rangeInputDistance.value;
+    relativeDistanceScaling = rangeInputDistance.value / 100 * initDistanceScaling;
+    resetCanvasPositions();
+});
+
+
+const rangeInputScale = document.querySelector('#sizeScalingInput .scaleToInput .rangeInput');
+const numberInputScale = document.querySelector('#sizeScalingInput .scaleToInput .numericalInput');
+
+// Synchronize number input with slider input
+numberInputScale.addEventListener('input', function () {
+    rangeInputScale.value = numberInputScale.value;
+    relativePlanetScaling = numberInputScale.value / 100 * initSizeScaling;
+    let distanceRatio = calculateDistanceRatio(); // Capture the returned object
+    document.querySelector('#distanceScalingInput .proportionalScaling').innerHTML = "Accurate distance value relative to size: " + `${distanceRatio.idealScale / initDistanceScaling * 100}`;
+    resetCanvasPositions();
+});
+
+// Synchronize slider input with number input
+rangeInputScale.addEventListener('input', function () {
+    numberInputScale.value = rangeInputScale.value;
+    relativePlanetScaling = rangeInputScale.value / 100 * initSizeScaling;
+    let distanceRatio = calculateDistanceRatio(); // Capture the returned object
+    document.querySelector('#distanceScalingInput .proportionalScaling').innerHTML = "Accurate distance value relative to size: " + `${distanceRatio.idealScale / initDistanceScaling * 100}`;
+    resetCanvasPositions();
+});
+
+
+function calculateDistanceRatio() {
+    let km = Earth.size / 6371; // Determine how long 1km is based on the display earth's radius : actual earth radius
+    let distFromSunRatio = 149597870.691 * km;
+    let idealScale = distFromSunRatio / 1154;
+
+    return { idealScale }; // Return an object containing idealScale
+}
 //#endregion
 
 //#endregion
@@ -1178,7 +1291,20 @@ function init() {
     resetCanvasPositions();
     addPlanetsToList();
     planetToView = Sun;
+    document.getElementById("planetName").innerHTML = planetToView.name;
     calledInit = true; //we do not want to call init more than once, so we set the bool to true such that init will not be called again after the first frame
+    document.querySelector('#distanceScalingInput .proportionalScaling').innerHTML = "Accurate distance value relative to size: " + `${calculateDistanceRatio().idealScale / initDistanceScaling * 100}`;
+
+    if (window.innerWidth <= phoneWidth) {
+        document.getElementById("toRenderTextures").checked = false;
+        document.getElementById("toLDMAsteroids").checked = true;
+        renderTextures = false;
+        ldmAsteroids = true;
+    }
+    document.getElementById("toRenderMoons").checked = true;
+    document.getElementById("toRenderNames").checked = true;
+    document.getElementById("toRenderAsteroids").checked = true;
+
 }
 
 function update(dt) {
@@ -1190,6 +1316,12 @@ function update(dt) {
     rotatePlanetDisplays(dt);
     selectPlanet(dt);
     lockOntoDisplayPlanet(planetToView);
+
+    renderTextures = document.getElementById("toRenderTextures").checked;
+    ldmAsteroids = document.getElementById("toLDMAsteroids").checked;
+    torenderAsteroids = document.getElementById("toRenderAsteroids").checked;
+    torenderMoons = document.getElementById("toRenderMoons").checked;
+    renderDisplayNames = document.getElementById("toRenderNames").checked;
 }
 
 function render() {
